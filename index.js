@@ -5,15 +5,10 @@ const mongoose = require("mongoose");
 const path = require("path");
 const socketIo = require("socket.io");
 const config = require("./config");
-const hostname = process.env.HOST || "localhost";
+const hostname = process.env.HOST || "0.0.0.0";
 const port = Number(process.env.PORT || 3000);
 let router = require("./router");
 var app = express();
-
-mongoose
-  .connect(config.db)
-  .then(() => console.log("Conection successful!"))
-  .catch((err) => console.error(err));
 
 const server = http.createServer(app);
 const io = socketIo(server, {
@@ -35,6 +30,20 @@ io.on("connection", (socket) => {
 app.use(router.init(io));
 app.use("/images", express.static(path.join(__dirname, "images")));
 
-server.listen(port, hostname, () => {
-  console.log(`Server running at http://${hostname}:${port}`);
+async function start() {
+  if (!config.db) {
+    throw new Error("MONGO_URI environment variable is required");
+  }
+
+  await mongoose.connect(config.db);
+  console.log("Connection successful!");
+
+  server.listen(port, hostname, () => {
+    console.log(`Server running at http://${hostname}:${port}`);
+  });
+}
+
+start().catch((err) => {
+  console.error("Failed to start server:", err.message);
+  process.exit(1);
 });
