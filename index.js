@@ -13,16 +13,19 @@ const router = require('./router')
 
 const app = express()
 
-const FRONTEND_URL = 'https://pwa-front-end-mu.vercel.app'
+const FRONTEND_URLS = [
+  'https://pwa-front-end-mu.vercel.app',
+  'https://pwa-front-1t5cdghw2-pwa-72ae.vercel.app'
+]
 
-app.use(
-  cors({
-    origin: FRONTEND_URL,
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
-  })
-)
+const corsOptions = {
+  origin: FRONTEND_URLS,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
+}
+
+app.use(cors(corsOptions))
 
 app.options(
   /.*/,
