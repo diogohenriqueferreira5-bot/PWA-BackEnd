@@ -22,18 +22,12 @@ const UsersRouter = io => {
     .post(Users.autorize([scopes.Admin]), function (req, res) {
       console.log('Create user')
 
-      const body = req.body
-      const { role } = body
-
-      if (
-        !role ||
-        !Array.isArray(role.scope) ||
-        !role.scope.includes(scopes.NonMember)
-      ) {
-        return res.status(401).send({
-          auth: false,
-          message: 'Only create NonMembers'
-        })
+      const body = {
+        ...req.body,
+        role: {
+          name: 'NonMember',
+          scope: [scopes.NonMember]
+        }
       }
 
       Users.create(body)
@@ -51,13 +45,6 @@ const UsersRouter = io => {
           if (err.code === 11000) {
             return res.status(409).send({
               message: 'Já existe um utilizador com esse nome ou email.'
-            })
-          }
-
-          if (err.name === 'ValidationError') {
-            return res.status(400).send({
-              message: 'Dados inválidos.',
-              errors: err.errors
             })
           }
 
