@@ -1,96 +1,99 @@
-const bodyParser = require("body-parser");
-const express = require("express");
-const Users = require("../data/users");
-const cookieParser = require('cookie-parser');
-const VerifyToken = require('../middleware/token');
+const bodyParser = require('body-parser')
+const express = require('express')
+const Users = require('../data/users')
+const cookieParser = require('cookie-parser')
+const VerifyToken = require('../middleware/token')
 
-function AuthRouter() {
-  let router = express();
+function AuthRouter () {
+  let router = express()
 
-  router.use(bodyParser.json({ limit: "100mb" }));
-  router.use(bodyParser.urlencoded({ limit: "100mb", extended: true }));
+  router.use(bodyParser.json({ limit: '100mb' }))
+  router.use(bodyParser.urlencoded({ limit: '100mb', extended: true }))
 
-  router.route("/register").post(function (req, res, next) {
-    const body = req.body;
-    
-    const { role } = body;
-    const scopes = role && role.scope;
+  router.route('/register').post(function (req, res, next) {
+    const body = req.body
+
+    const { role } = body
+    const scopes = role && role.scope
     const isAdmin = Array.isArray(scopes)
-      ? scopes.includes("admin")
-      : scopes === "admin";
+      ? scopes.includes('admin')
+      : scopes === 'admin'
 
     if (!isAdmin) {
-      return res.status(401).send({ auth: false, message: "Only create Admin" });
+      return res.status(401).send({ auth: false, message: 'Only create Admin' })
     }
 
     Users.create(body)
-      .then((result) => Users.createToken(result.user))
-      .then((response) => {
-        res.status(200);
-        res.send(response);
+      .then(result => Users.createToken(result.user))
+      .then(response => {
+        res.status(200)
+        res.send(response)
       })
-      .catch((err) => {
-        res.status(500);
-        res.send(err);
-        next();
-      });
-  });
+      .catch(err => {
+        res.status(500)
+        res.send(err)
+        next()
+      })
+  })
 
-  router.route("/login").post(function (req, res, next) {
-    let body = req.body;
+  router.route('/login').post(function (req, res, next) {
+    let body = req.body
 
     const userLookup = body.qrToken
       ? Users.findUserByQrLoginToken(body.qrToken)
-      : Users.findUser(body);
+      : Users.findUser(body)
 
     return userLookup
-      .then((user) => {
-        return Users.createToken(user);
+      .then(user => {
+        return Users.createToken(user)
       })
-      .then((response) => {
+      .then(response => {
         // The httpOnly: true setting means that the cookie can’t be read using JavaScript but can still be sent back to the server in HTTP requests
-        res.cookie("token", response.token, { httpOnly: true });
-        res.status(200);
-        res.send(response);
+        res.cookie('token', response.token, {
+          httpOnly: true,
+          secure: true,
+          sameSite: 'none'
+        })
+        res.status(200)
+        res.send(response)
       })
-      .catch((err) => {
-        console.log(err);
-        res.status(401);
-        res.send({ auth: false, message: "Invalid login credentials." });
-      });
-  });
+      .catch(err => {
+        console.log(err)
+        res.status(401)
+        res.send({ auth: false, message: 'Invalid login credentials.' })
+      })
+  })
 
-  router.use(cookieParser()); // Adicionar esta verificação
-  router.use(VerifyToken); // Adicionar esta verificação
+  router.use(cookieParser()) // Adicionar esta verificação
+  router.use(VerifyToken) // Adicionar esta verificação
 
-  router.route("/qr-token").get(function (req, res) {
+  router.route('/qr-token').get(function (req, res) {
     res.status(200).send({
-      qrToken: Users.createQrLoginToken(req.id),
-    });
-  });
+      qrToken: Users.createQrLoginToken(req.id)
+    })
+  })
 
-  router.route("/logout").get(function (req, res, next) {
+  router.route('/logout').get(function (req, res, next) {
     // The httpOnly: true setting means that the cookie can’t be read using JavaScript but can still be sent back to the server in HTTP requests
     // MaxAge : It allows us to invalidate the cookie
-    res.cookie("token", req.cookies.token, { httpOnly: true, maxAge: 0 });
+    res.cookie('token', req.cookies.token, { httpOnly: true, maxAge: 0 })
 
-    res.status(200);
-    res.send({ logout: true });
-    next();
-  });
+    res.status(200)
+    res.send({ logout: true })
+    next()
+  })
 
-  router.route("/me").get(function(req, res, next)  {
+  router.route('/me').get(function (req, res, next) {
     return new Promise(() => {
-      res.status(202).send({ auth:true, decoded: req.roleUser });
+      res.status(202).send({ auth: true, decoded: req.roleUser })
+    }).catch(err => {
+      res.status(500)
+      res.send(err)
+      next()
     })
-    .catch((err) => {
-      res.status(500);
-      res.send(err);
-      next();
-    });
-  });
+  })
 
-  return router;
+  return router
 }
 
-module.exports = AuthRouter;
+module.exports = AuthRouter
