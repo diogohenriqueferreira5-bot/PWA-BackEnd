@@ -4,14 +4,35 @@ const http = require('http')
 const mongoose = require('mongoose')
 const path = require('path')
 const socketIo = require('socket.io')
+const cors = require('cors')
 const config = require('./config')
+
 const hostname = process.env.HOST || '0.0.0.0'
 const port = Number(process.env.PORT || 3000)
-let router = require('./router')
-var app = express()
+const router = require('./router')
+
+const app = express()
+
+const FRONTEND_URL = 'https://pwa-front-end-mu.vercel.app'
+
+app.use(
+  cors({
+    origin: FRONTEND_URL,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+  })
+)
+
+app.options(
+  /.*/,
+  cors({
+    origin: FRONTEND_URL,
+    credentials: true
+  })
+)
 
 const server = http.createServer(app)
-const FRONTEND_URL = 'https://pwa-front-end-mu.vercel.app'
 
 const io = socketIo(server, {
   cors: {
@@ -26,7 +47,6 @@ io.on('connection', socket => {
 
   socket.on('disconnect', () => {
     console.log('👤: A user disconnected')
-    socket.disconnect()
   })
 })
 
