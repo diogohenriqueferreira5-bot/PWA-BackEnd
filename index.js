@@ -30,7 +30,7 @@ app.use(cors(corsOptions))
 app.options(
   /.*/,
   cors({
-    origin: FRONTEND_URL,
+    origin: FRONTEND_URLS,
     credentials: true
   })
 )
@@ -39,7 +39,7 @@ const server = http.createServer(app)
 
 const io = socketIo(server, {
   cors: {
-    origin: FRONTEND_URL,
+    origin: FRONTEND_URLS,
     methods: ['GET', 'POST'],
     credentials: true
   }
